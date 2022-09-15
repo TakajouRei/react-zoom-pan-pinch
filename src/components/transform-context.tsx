@@ -441,6 +441,7 @@ class TransformContext extends Component<
     const { scale, positionX, positionY } = this.transformState;
     const transform = getTransformStyles(positionX, positionY, scale);
     this.contentComponent.style.transform = transform;
+    this.contentComponent.style.transformOrigin = "0 0 0";
 
     this.handleRef();
   };
