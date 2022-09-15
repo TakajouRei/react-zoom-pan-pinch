@@ -3,7 +3,7 @@ import { render } from "@testing-library/react";
 import {
   TransformWrapper,
   TransformComponent,
-} from "./node_modules/react-zoom-pan-pinch";
+} from "./node_modules/@takajourei/react-zoom-pan-pinch";
 import logoImg from "logo/logo.png";
 
 const App = (
