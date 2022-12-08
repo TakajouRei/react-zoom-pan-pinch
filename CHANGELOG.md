@@ -1,9 +1,14 @@
 # CHANGELOG
 
-## Version: 1.0.2
+## Version: 2.1.3
 
-##### Published: 23.11.2022
+##### Published: 24.07.2021
 
-1. Transform matrix use template string
+1. Alignment animation size changes:
 
-2. Remove Storybook docs
+- "padding" size is not longer calculated based on the wrapper size - it's now
+  represented by pixels
+- you can set separate "padding" values for X and Y
+
+2. Storybook docs fix - prevented to log every action callback since it was
+   killing performance
