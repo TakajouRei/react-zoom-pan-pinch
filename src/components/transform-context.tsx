@@ -1,42 +1,27 @@
-import React, { Component } from "react";
-
 import {
+  AnimationType,
   BoundsType,
   LibrarySetup,
   PositionType,
-  VelocityType,
-  AnimationType,
-  ReactZoomPanPinchRef,
   ReactZoomPanPinchProps,
+  ReactZoomPanPinchRef,
   ReactZoomPanPinchState,
+  VelocityType,
 } from "../models";
-
+import React, { Component } from "react";
 import {
-  getContext,
   createSetup,
   createState,
-  handleCallback,
-  getTransformStyles,
-  makePassiveEventOption,
   getCenterPosition,
+  getContext,
+  getTransformStyles,
+  handleCallback,
+  makePassiveEventOption,
 } from "../utils";
-
-import { contextInitialState } from "../constants/state.constants";
-
-import { handleCancelAnimation } from "../core/animations/animations.utils";
-import { isWheelAllowed } from "../core/wheel/wheel.utils";
-import { isPinchAllowed, isPinchStartAllowed } from "../core/pinch/pinch.utils";
-import { handleCalculateBounds } from "../core/bounds/bounds.utils";
-
 import {
-  handleWheelStart,
-  handleWheelZoom,
-  handleWheelStop,
-} from "../core/wheel/wheel.logic";
-import {
-  isPanningAllowed,
-  isPanningStartAllowed,
-} from "../core/pan/panning.utils";
+  handleDoubleClick,
+  isDoubleClickAllowed,
+} from "../core/double-click/double-click.logic";
 import {
   handlePanning,
   handlePanningEnd,
@@ -48,9 +33,20 @@ import {
   handlePinchZoom,
 } from "../core/pinch/pinch.logic";
 import {
-  handleDoubleClick,
-  isDoubleClickAllowed,
-} from "../core/double-click/double-click.logic";
+  handleWheelStart,
+  handleWheelStop,
+  handleWheelZoom,
+} from "../core/wheel/wheel.logic";
+import {
+  isPanningAllowed,
+  isPanningStartAllowed,
+} from "../core/pan/panning.utils";
+import { isPinchAllowed, isPinchStartAllowed } from "../core/pinch/pinch.utils";
+
+import { contextInitialState } from "../constants/state.constants";
+import { handleCalculateBounds } from "../core/bounds/bounds.utils";
+import { handleCancelAnimation } from "../core/animations/animations.utils";
+import { isWheelAllowed } from "../core/wheel/wheel.utils";
 
 type StartCoordsType = { x: number; y: number } | null;
 
@@ -407,6 +403,8 @@ class TransformContext extends Component<
     positionX: number,
     positionY: number,
   ): void => {
+    const { onTransformed } = this.props;
+
     if (!isNaN(scale) && !isNaN(positionX) && !isNaN(positionY)) {
       if (scale !== this.transformState.scale) {
         this.transformState.previousScale = this.transformState.scale;
@@ -414,6 +412,12 @@ class TransformContext extends Component<
       }
       this.transformState.positionX = positionX;
       this.transformState.positionY = positionY;
+
+      handleCallback(
+        getContext(this),
+        { scale, positionX, positionY },
+        onTransformed,
+      );
 
       this.applyTransformation();
     } else {

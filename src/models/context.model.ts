@@ -1,16 +1,16 @@
-import React from "react";
-
-import { TransformContext } from "../components/transform-context";
-import { animations } from "../core/animations/animations.constants";
-import { DeepNonNullable } from "./helpers.model";
 import {
-  zoomIn,
-  zoomToElement,
   centerView,
   resetTransform,
   setTransform,
+  zoomIn,
   zoomOut,
+  zoomToElement,
 } from "../core/handlers/handlers.logic";
+
+import { DeepNonNullable } from "./helpers.model";
+import React from "react";
+import { TransformContext } from "../components/transform-context";
+import { animations } from "../core/animations/animations.constants";
 
 export type ReactZoomPanPinchContext = typeof TransformContext.prototype;
 
@@ -128,6 +128,10 @@ export type ReactZoomPanPinchProps = {
     ref: ReactZoomPanPinchRef,
     event: TouchEvent | MouseEvent,
   ) => void;
+  onTransformed?: (
+    ref: ReactZoomPanPinchRef,
+    state: { scale: number; positionX: number; positionY: number },
+  ) => void;
   onInit?: (ref: ReactZoomPanPinchRef) => void;
 };
 
@@ -168,6 +172,7 @@ export type LibrarySetup = Pick<
       | "onZoomStart"
       | "onZoom"
       | "onZoomStop"
+      | "onTransformed"
       | "onInit"
     >
   >;
