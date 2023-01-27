@@ -140,12 +140,11 @@ export function handleNewPosition(
   const { wrapperComponent, bounds } = contextInstance;
   const { scale, positionX, positionY } = contextInstance.transformState;
 
-  const hasPositionXChanged = newPositionX !== positionX;
-  const hasPositionYChanged = newPositionY !== positionY;
-
-  const hasNewPosition = !hasPositionXChanged || !hasPositionYChanged;
-
-  if (!wrapperComponent || hasNewPosition || !bounds) {
+  if (
+    wrapperComponent === null ||
+    bounds === null ||
+    (newPositionX === positionX && newPositionY === positionY)
+  ) {
     return;
   }
 
@@ -190,9 +189,9 @@ export const getPaddingValue = (
 ): number => {
   const { setup, transformState } = contextInstance;
   const { scale } = transformState;
-  const { minScale } = setup;
+  const { minScale, disablePadding } = setup;
 
-  if (size > 0 && scale >= minScale) {
+  if (size > 0 && scale >= minScale && !disablePadding) {
     return size;
   }
 
