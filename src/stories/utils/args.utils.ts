@@ -18,6 +18,7 @@ export const normalizeArgs = (args: { [key: string]: any }): any => {
   return {
     ...newArgs,
     onTransformed: undefined,
+    onDoubleClicked: undefined,
     onWheelStart: undefined,
     onWheel: undefined,
     onWheelStop: undefined,

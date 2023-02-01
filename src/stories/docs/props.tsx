@@ -479,6 +479,12 @@ export const wrapperPropsTable: ComponentProps = {
     defaultValue: "undefined",
     description: "Callback fired when on each transform",
   },
+  onDoubleClicked: {
+    type: ["(ref: ReactZoomPanPinchRef, event) => void"],
+    defaultValue: "undefined",
+    description:
+      "Callback fired when doubleclick events are finished",
+  },
   onInit: {
     type: ["(ref: ReactZoomPanPinchRef) => void"],
     defaultValue: "undefined",

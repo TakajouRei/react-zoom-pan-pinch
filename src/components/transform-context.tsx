@@ -364,12 +364,14 @@ class TransformContext extends Component<
 
   onDoubleClick = (event: MouseEvent | TouchEvent): void => {
     const { disabled } = this.setup;
+    const { onDoubleClicked } = this.props;
     if (disabled) return;
 
     const isAllowed = isDoubleClickAllowed(this, event);
     if (!isAllowed) return;
 
     handleDoubleClick(this, event);
+    handleCallback(getContext(this), event, onDoubleClicked);
   };
 
   //////////
