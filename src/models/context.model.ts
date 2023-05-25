@@ -1,3 +1,7 @@
+import React from "react";
+
+import { animations } from "../core/animations/animations.constants";
+import { DeepNonNullable } from "./helpers.model";
 import {
   centerView,
   resetTransform,
@@ -6,18 +10,21 @@ import {
   zoomOut,
   zoomToElement,
 } from "../core/handlers/handlers.logic";
+import { ZoomPanPinch } from "../core/instance.core";
 
-import { DeepNonNullable } from "./helpers.model";
-import React from "react";
-import { TransformContext } from "../components/transform-context";
-import { animations } from "../core/animations/animations.constants";
+export type ReactZoomPanPinchContext = typeof ZoomPanPinch.prototype;
 
-export type ReactZoomPanPinchContext = typeof TransformContext.prototype;
-
-export type ReactZoomPanPinchRef = {
+export type ReactZoomPanPinchContextState = {
   instance: ReactZoomPanPinchContext;
   state: ReactZoomPanPinchState;
+};
+
+export type ReactZoomPanPinchContentRef = {
+  instance: ReactZoomPanPinchContext;
 } & ReactZoomPanPinchHandlers;
+
+export type ReactZoomPanPinchRef = ReactZoomPanPinchContextState &
+  ReactZoomPanPinchHandlers;
 
 export type ReactZoomPanPinchState = {
   previousScale: number;
@@ -35,8 +42,14 @@ export type ReactZoomPanPinchHandlers = {
   zoomToElement: ReturnType<typeof zoomToElement>;
 };
 
+export type ReactZoomPanPinchRefProps = {
+  setRef: (context: ReactZoomPanPinchRef) => void;
+} & Omit<ReactZoomPanPinchProps, "ref">;
+
 export type ReactZoomPanPinchProps = {
-  children?: React.ReactNode | ((ref: ReactZoomPanPinchRef) => React.ReactNode);
+  children?:
+    | React.ReactNode
+    | ((ref: ReactZoomPanPinchContentRef) => React.ReactNode);
   ref?: React.Ref<ReactZoomPanPinchRef>;
   initialScale?: number;
   initialPositionX?: number;
@@ -52,6 +65,7 @@ export type ReactZoomPanPinchProps = {
   centerZoomedOut?: boolean;
   centerOnInit?: boolean;
   disablePadding?: boolean;
+  customTransform?: (x: number, y: number, scale: number) => string;
   wheel?: {
     step?: number;
     disabled?: boolean;
@@ -180,5 +194,6 @@ export type LibrarySetup = Pick<
       | "onTransformed"
       | "onDoubleClicked"
       | "onInit"
+      | "customTransform"
     >
   >;

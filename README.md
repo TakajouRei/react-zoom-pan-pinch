@@ -16,7 +16,13 @@ order to fix transform translate3d to transform matrix.
 - :wrench: Highly customizable
 - :crown: Animations and Utils to create own tools
 
-## Install
+## Help me keep working on this project ❤️
+
+- [Become a Sponsor on GitHub](https://github.com/sponsors/prc5)
+
+---
+
+## Installation
 
 ```bash
 npm install --save @takajourei/react-zoom-pan-pinch
@@ -28,7 +34,7 @@ or
 yarn add @takajourei/react-zoom-pan-pinch
 ```
 
-## Usage
+## Examples
 
 ```jsx
 import React, { Component } from "react";
@@ -78,43 +84,49 @@ or
 
 ```tsx
 import React, { useRef } from "react";
-import { TransformWrapper, TransformComponent, ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
+import {
+  TransformWrapper,
+  TransformComponent,
+  ReactZoomPanPinchRef,
+} from "react-zoom-pan-pinch";
 
-const Component = ()=> {
-const transformComponentRef = useRef<ReactZoomPanPinchRef>(null!)
-
-const zoomToImage = ()=>{
-  const { zoomToElement } = transformComponentRef.current
-  zoomToElement('imgExample')
-}
-
-const Control = ({zoomIn, zoomOut, resetTransform}:any)=>(
+const Controls = ({ zoomIn, zoomOut, resetTransform }) => (
   <>
     <button onClick={() => zoomIn()}>+</button>
     <button onClick={() => zoomOut()}>-</button>
     <button onClick={() => resetTransform()}>x</button>
   </>
-)
+);
 
-    return (
-      <TransformWrapper
-        initialScale={1}
-        initialPositionX={200}
-        initialPositionY={100}
-        ref={transformComponentRef}
-      >
-        {(utils) => (
-          <>
-            <Control {...utils}/>
-            <TransformComponent>
-              <img src="image.jpg" alt="test" id="imgExample" />
-              <div onClick={zoomToImage}>Example text</div>
-            </TransformComponent>
-          </React.Fragment>
-        )}
-      </TransformWrapper>
-    );
-}
+const Component = () => {
+  const transformComponentRef = useRef<ReactZoomPanPinchRef | null>(null);
+
+  const zoomToImage = () => {
+    if (transformComponentRef.current) {
+      const { zoomToElement } = transformComponentRef.current;
+      zoomToElement("imgExample");
+    }
+  };
+
+  return (
+    <TransformWrapper
+      initialScale={1}
+      initialPositionX={200}
+      initialPositionY={100}
+      ref={transformComponentRef}
+    >
+      {(utils) => (
+        <React.Fragment>
+          <Controls {...utils} />
+          <TransformComponent>
+            <img src="image.jpg" alt="test" id="imgExample" />
+            <div onClick={zoomToImage}>Example text</div>
+          </TransformComponent>
+        </React.Fragment>
+      )}
+    </TransformWrapper>
+  );
+};
 ```
 
 ## License

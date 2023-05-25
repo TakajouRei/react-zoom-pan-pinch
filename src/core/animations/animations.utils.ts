@@ -1,5 +1,5 @@
+/* eslint-disable no-param-reassign */
 import { animations } from "./animations.constants";
-
 import {
   AnimationType,
   ReactZoomPanPinchContext,
@@ -60,6 +60,20 @@ export function handleSetupAnimation(
   requestAnimationFrame(contextInstance.animation);
 }
 
+function isValidTargetState(targetState: StateType): boolean {
+  const { scale, positionX, positionY } = targetState;
+
+  if (
+    Number.isNaN(scale) ||
+    Number.isNaN(positionX) ||
+    Number.isNaN(positionY)
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
 export function animate(
   contextInstance: ReactZoomPanPinchContext,
   targetState: StateType,
@@ -68,6 +82,7 @@ export function animate(
 ): void {
   const isValid = isValidTargetState(targetState);
   if (!contextInstance.mounted || !isValid) return;
+
   const { setTransformState } = contextInstance;
   const { scale, positionX, positionY } = contextInstance.transformState;
 
@@ -96,14 +111,4 @@ export function animate(
       },
     );
   }
-}
-
-function isValidTargetState(targetState: StateType): boolean {
-  const { scale, positionX, positionY } = targetState;
-
-  if (isNaN(scale) || isNaN(positionX) || isNaN(positionY)) {
-    return false;
-  }
-
-  return true;
 }

@@ -8,7 +8,6 @@ import {
   ReactZoomPanPinchState,
   VelocityType,
 } from "../models";
-import React, { Component } from "react";
 import {
   createSetup,
   createState,
@@ -18,50 +17,44 @@ import {
   handleCallback,
   makePassiveEventOption,
 } from "../utils";
+import { handleCancelAnimation } from "./animations/animations.utils";
+import { isWheelAllowed } from "./wheel/wheel.utils";
+import { isPinchAllowed, isPinchStartAllowed } from "./pinch/pinch.utils";
+import { handleCalculateBounds } from "./bounds/bounds.utils";
 import {
-  handleDoubleClick,
-  isDoubleClickAllowed,
-} from "../core/double-click/double-click.logic";
+  handleWheelStart,
+  handleWheelZoom,
+  handleWheelStop,
+} from "./wheel/wheel.logic";
+import { isPanningAllowed, isPanningStartAllowed } from "./pan/panning.utils";
 import {
   handlePanning,
   handlePanningEnd,
   handlePanningStart,
-} from "../core/pan/panning.logic";
+} from "./pan/panning.logic";
 import {
   handlePinchStart,
   handlePinchStop,
   handlePinchZoom,
-} from "../core/pinch/pinch.logic";
+} from "./pinch/pinch.logic";
 import {
-  handleWheelStart,
-  handleWheelStop,
-  handleWheelZoom,
-} from "../core/wheel/wheel.logic";
-import {
-  isPanningAllowed,
-  isPanningStartAllowed,
-} from "../core/pan/panning.utils";
-import { isPinchAllowed, isPinchStartAllowed } from "../core/pinch/pinch.utils";
-
-import { contextInitialState } from "../constants/state.constants";
-import { handleCalculateBounds } from "../core/bounds/bounds.utils";
-import { handleCancelAnimation } from "../core/animations/animations.utils";
-import { isWheelAllowed } from "../core/wheel/wheel.utils";
+  handleDoubleClick,
+  isDoubleClickAllowed,
+} from "./double-click/double-click.logic";
 
 type StartCoordsType = { x: number; y: number } | null;
 
-const Context = React.createContext(contextInitialState);
+export class ZoomPanPinch {
+  public props: ReactZoomPanPinchProps;
 
-class TransformContext extends Component<
-  Omit<ReactZoomPanPinchProps, "ref"> & {
-    setRef: (context: ReactZoomPanPinchRef) => void;
-  }
-> {
   public mounted = true;
 
-  public transformState: ReactZoomPanPinchState = createState(this.props);
-
-  public setup: LibrarySetup = createSetup(this.props);
+  public transformState: ReactZoomPanPinchState;
+  public setup: LibrarySetup;
+  public observer?: ResizeObserver;
+  public onChangeCallbacks: Set<(ctx: ReactZoomPanPinchRef) => void> =
+    new Set();
+  public onInitCallbacks: Set<(ctx: ReactZoomPanPinchRef) => void> = new Set();
 
   // Components
   public wrapperComponent: HTMLDivElement | null = null;
@@ -83,6 +76,8 @@ class TransformContext extends Component<
   public pinchStartDistance: null | number = null;
   public pinchStartScale: null | number = null;
   public pinchMidpoint: null | PositionType = null;
+  // double click helpers
+  public doubleClickStopEventTimer: ReturnType<typeof setTimeout> | null = null;
   // velocity helpers
   public velocity: VelocityType | null = null;
   public velocityTime: number | null = null;
@@ -94,20 +89,24 @@ class TransformContext extends Component<
   // key press
   public pressedKeys: { [key: string]: boolean } = {};
 
-  componentDidMount(): void {
+  constructor(props: ReactZoomPanPinchProps) {
+    this.props = props;
+    this.setup = createSetup(this.props);
+    this.transformState = createState(this.props);
+  }
+
+  mount = () => {
     this.initializeWindowEvents();
-  }
+  };
 
-  componentWillUnmount(): void {
+  unmount = () => {
     this.cleanupWindowEvents();
-  }
+  };
 
-  componentDidUpdate(oldProps: ReactZoomPanPinchProps): void {
-    if (oldProps !== this.props) {
-      handleCalculateBounds(this, this.transformState.scale);
-      this.setup = createSetup(this.props);
-    }
-  }
+  update = (newProps: ReactZoomPanPinchProps) => {
+    handleCalculateBounds(this, this.transformState.scale);
+    this.setup = createSetup(newProps);
+  };
 
   initializeWindowEvents = (): void => {
     const passive = makePassiveEventOption();
@@ -120,24 +119,31 @@ class TransformContext extends Component<
     currentDocument?.addEventListener("mouseleave", this.clearPanning, passive);
     currentWindow?.addEventListener("keyup", this.setKeyUnPressed, passive);
     currentWindow?.addEventListener("keydown", this.setKeyPressed, passive);
-
-    this.handleRef();
-  }
+  };
 
   cleanupWindowEvents = (): void => {
     const passive = makePassiveEventOption();
     const currentDocument = this.wrapperComponent?.ownerDocument;
     const currentWindow = currentDocument?.defaultView;
-    currentWindow?.removeEventListener("mousedown", this.onPanningStart, passive);
+    currentWindow?.removeEventListener(
+      "mousedown",
+      this.onPanningStart,
+      passive,
+    );
     currentWindow?.removeEventListener("mousemove", this.onPanning, passive);
     currentWindow?.removeEventListener("mouseup", this.onPanningStop, passive);
-    currentDocument?.removeEventListener("mouseleave", this.clearPanning, passive);
+    currentDocument?.removeEventListener(
+      "mouseleave",
+      this.clearPanning,
+      passive,
+    );
     currentWindow?.removeEventListener("keyup", this.setKeyUnPressed, passive);
     currentWindow?.removeEventListener("keydown", this.setKeyPressed, passive);
     document.removeEventListener("mouseleave", this.clearPanning, passive);
 
     handleCancelAnimation(this);
-  }
+    this.observer?.disconnect();
+  };
 
   handleInitializeWrapperEvents = (wrapper: HTMLDivElement): void => {
     // Zooming events on wrapper
@@ -150,36 +156,27 @@ class TransformContext extends Component<
     wrapper.addEventListener("touchend", this.onTouchPanningStop, passive);
   };
 
-  handleInitialize = (): void => {
+  handleInitialize = (contentComponent: HTMLDivElement): void => {
     const { centerOnInit } = this.setup;
-
     this.applyTransformation();
-    this.forceUpdate();
+    this.onInitCallbacks.forEach((callback) => callback(getContext(this)));
 
     if (centerOnInit) {
-      // this has to be redone once the right solution is found
-      // problem is - we need to execute it after mounted component specify it's height / width, images are fetched async so it's tricky
-      setTimeout(() => {
-        if (this.mounted) {
-          this.setCenter();
-        }
-      }, 50);
-      setTimeout(() => {
-        if (this.mounted) {
-          this.setCenter();
-        }
-      }, 100);
-      setTimeout(() => {
-        if (this.mounted) {
-          this.setCenter();
-        }
-      }, 200);
+      this.setCenter();
+      this.observer = new ResizeObserver(() => {
+        this.onInitCallbacks.forEach((callback) => callback(getContext(this)));
+        this.setCenter();
+        this.observer?.disconnect();
+      });
+
+      // Start observing the target node for configured mutations
+      this.observer.observe(contentComponent);
     }
   };
 
-  //////////
+  /// ///////
   // Zoom
-  //////////
+  /// ///////
 
   onWheelZoom = (event: WheelEvent): void => {
     const { disabled } = this.setup;
@@ -196,9 +193,9 @@ class TransformContext extends Component<
     handleWheelStop(this, event);
   };
 
-  //////////
+  /// ///////
   // Pan
-  //////////
+  /// ///////
 
   onPanningStart = (event: MouseEvent): void => {
     const { disabled } = this.setup;
@@ -247,9 +244,9 @@ class TransformContext extends Component<
     }
   };
 
-  //////////
+  /// ///////
   // Pinch
-  //////////
+  /// ///////
 
   onPinchStart = (event: TouchEvent): void => {
     const { disabled } = this.setup;
@@ -293,9 +290,9 @@ class TransformContext extends Component<
     }
   };
 
-  //////////
+  /// ///////
   // Touch
-  //////////
+  /// ///////
 
   onTouchPanningStart = (event: TouchEvent): void => {
     const { disabled } = this.setup;
@@ -358,9 +355,9 @@ class TransformContext extends Component<
     this.onPinchStop(event);
   };
 
-  //////////
+  /// ///////
   // Double Click
-  //////////
+  /// ///////
 
   onDoubleClick = (event: MouseEvent | TouchEvent): void => {
     const { disabled } = this.setup;
@@ -374,9 +371,9 @@ class TransformContext extends Component<
     handleCallback(getContext(this), event, onDoubleClicked);
   };
 
-  //////////
+  /// ///////
   // Helpers
-  //////////
+  /// ///////
 
   clearPanning = (event: MouseEvent): void => {
     if (this.isPanning) {
@@ -399,22 +396,6 @@ class TransformContext extends Component<
     return Boolean(keys.find((key) => this.pressedKeys[key]));
   };
 
-  setComponents = (
-    wrapperComponent: HTMLDivElement,
-    contentComponent: HTMLDivElement,
-  ): void => {
-    this.cleanupWindowEvents();
-    this.wrapperComponent = wrapperComponent;
-    this.contentComponent = contentComponent;
-    handleCalculateBounds(this, this.transformState.scale);
-    this.handleInitializeWrapperEvents(wrapperComponent);
-    this.initializeWindowEvents();
-    this.handleInitialize();
-    this.handleRef();
-    this.isInitialized = true;
-    handleCallback(getContext(this), undefined, this.props.onInit);
-  };
-
   setTransformState = (
     scale: number,
     positionX: number,
@@ -422,7 +403,11 @@ class TransformContext extends Component<
   ): void => {
     const { onTransformed } = this.props;
 
-    if (!isNaN(scale) && !isNaN(positionX) && !isNaN(positionY)) {
+    if (
+      !Number.isNaN(scale) &&
+      !Number.isNaN(positionX) &&
+      !Number.isNaN(positionY)
+    ) {
       if (scale !== this.transformState.scale) {
         this.transformState.previousScale = this.transformState.scale;
         this.transformState.scale = scale;
@@ -430,12 +415,10 @@ class TransformContext extends Component<
       this.transformState.positionX = positionX;
       this.transformState.positionY = positionY;
 
-      handleCallback(
-        getContext(this),
-        { scale, positionX, positionY },
-        onTransformed,
-      );
       this.applyTransformation();
+      const ctx = getContext(this);
+      this.onChangeCallbacks.forEach((callback) => callback(ctx));
+      handleCallback(ctx, { scale, positionX, positionY }, onTransformed);
     } else {
       console.error("Detected NaN set state values");
     }
@@ -456,37 +439,64 @@ class TransformContext extends Component<
     }
   };
 
+  handleTransformStyles = (x: number, y: number, scale: number) => {
+    if (this.props.customTransform) {
+      return this.props.customTransform(x, y, scale);
+    }
+    return getTransformStyles(x, y, scale);
+  };
+
   applyTransformation = (): void => {
     if (!this.mounted || !this.contentComponent) return;
     const { scale, positionX, positionY } = this.transformState;
-    const transform = getTransformStyles(positionX, positionY, scale);
+    const transform = this.handleTransformStyles(positionX, positionY, scale);
     this.contentComponent.style.transform = transform;
     this.contentComponent.style.transformOrigin = "0 0 0";
-
-    this.handleRef();
   };
 
-  handleRef = (): void => {
-    this.props.setRef(getContext(this));
+  getContext = () => {
+    return getContext(this);
   };
 
-  render(): JSX.Element {
-    const value = getContext(this);
-    const { children } = this.props;
-    const content = typeof children === "function" ? children(value) : children;
+  /**
+   * Hooks
+   */
 
-    return (
-      <Context.Provider
-        value={{
-          ...this.transformState,
-          setComponents: this.setComponents,
-          contextInstance: this,
-        }}
-      >
-        {content}
-      </Context.Provider>
-    );
-  }
+  onChange = (callback: (ref: ReactZoomPanPinchRef) => void) => {
+    if (!this.onChangeCallbacks.has(callback)) {
+      this.onChangeCallbacks.add(callback);
+    }
+    return () => {
+      this.onChangeCallbacks.delete(callback);
+    };
+  };
+
+  onInit = (callback: (ref: ReactZoomPanPinchRef) => void) => {
+    if (!this.onInitCallbacks.has(callback)) {
+      this.onInitCallbacks.add(callback);
+    }
+    return () => {
+      this.onInitCallbacks.delete(callback);
+    };
+  };
+
+  /**
+   * Initialization
+   */
+
+  init = (
+    wrapperComponent: HTMLDivElement,
+    contentComponent: HTMLDivElement,
+  ): void => {
+    this.cleanupWindowEvents();
+    this.wrapperComponent = wrapperComponent;
+    this.contentComponent = contentComponent;
+    handleCalculateBounds(this, this.transformState.scale);
+    this.handleInitializeWrapperEvents(wrapperComponent);
+    this.handleInitialize(contentComponent);
+    this.initializeWindowEvents();
+    this.isInitialized = true;
+    const ctx = getContext(this);
+    handleCallback(ctx, undefined, this.props.onInit);
+  };
 }
-
-export { Context, TransformContext };

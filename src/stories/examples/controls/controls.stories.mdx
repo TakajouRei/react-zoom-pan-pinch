@@ -1,8 +1,7 @@
 import { Meta, Story, ArgsTable, Canvas } from "@storybook/addon-docs/blocks";
 import { action } from "@storybook/addon-actions";
 
-import { TransformWrapper } from "../../../components/transform-wrapper";
-import { TransformComponent } from "../../../components/transform-component";
+import { TransformWrapper, TransformComponent } from "../../../components";
 import { argsTypes } from "../../types/args.types.ts";
 import { normalizeArgs, Controls } from "../../utils";
 
@@ -17,6 +16,7 @@ export const Template = (args) => (
           wrapperStyle={{ maxWidth: "100%", maxHeight: "calc(100vh - 50px)" }}
         >
           <div style={{ background: "#444", color: "white", padding: "50px" }}>
+            {JSON.stringify(utils.state, null, 4)}
             <h1>No scrollbars needed</h1>
             <h2>Use mouse or gestures to move around</h2>
             <button

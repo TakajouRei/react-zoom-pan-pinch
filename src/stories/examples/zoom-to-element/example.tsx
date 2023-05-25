@@ -1,7 +1,6 @@
 import React from "react";
 
-import { TransformWrapper } from "../../../components/transform-wrapper";
-import { TransformComponent } from "../../../components/transform-component";
+import { TransformComponent, TransformWrapper } from "components";
 import { normalizeArgs } from "../../utils";
 
 import styles from "../../utils/styles.module.css";
@@ -13,24 +12,28 @@ export const Example: React.FC<any> = (args: any) => {
         <>
           <div>
             <button
+              type="button"
               className={styles.controlBtn}
               onClick={() => zoomToElement("element1")}
             >
               Zoom to element 1
             </button>
             <button
+              type="button"
               className={styles.controlBtn}
               onClick={() => zoomToElement("element2")}
             >
               Zoom to element 2
             </button>
             <button
+              type="button"
               className={styles.controlBtn}
               onClick={() => zoomToElement("element3")}
             >
               Zoom to element 3
             </button>
             <button
+              type="button"
               className={styles.controlBtn}
               onClick={() => resetTransform()}
             >

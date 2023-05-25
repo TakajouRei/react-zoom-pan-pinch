@@ -1,26 +1,10 @@
-import {
-  LibrarySetup,
-  ReactZoomPanPinchContext,
-} from "../models/context.model";
-import {
-  ReactZoomPanPinchComponentHelpers,
-  ReactZoomPanPinchState,
-} from "../models/context.model";
+import { LibrarySetup, ReactZoomPanPinchState } from "../models/context.model";
 
 export const initialState: ReactZoomPanPinchState = {
   previousScale: 1,
   scale: 1,
   positionX: 0,
   positionY: 0,
-};
-
-export const contextInitialState: ReactZoomPanPinchComponentHelpers &
-  ReactZoomPanPinchState & {
-    contextInstance: ReactZoomPanPinchContext | null;
-  } = {
-  ...initialState,
-  setComponents: () => undefined,
-  contextInstance: null,
 };
 
 export const initialSetup: LibrarySetup = {

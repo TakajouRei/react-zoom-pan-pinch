@@ -13,19 +13,26 @@ import { Meta } from "@storybook/addon-docs/blocks";
 > Super fast and light react npm package for zooming, panning and pinching html
 > elements in easy way
 
-<br />
-<br />
+- [Demo](https://prc5.github.io/react-zoom-pan-pinch/?path=/story/examples-big-image--big-image)
+- [Docs](https://prc5.github.io/react-zoom-pan-pinch/?path=/story/docs-props--page)
 
-## Features
+## Key Features
 
 - 🚀 Fast and easy to use
 - 🏭 Light, without external dependencies
 - 💎 Mobile gestures, touchpad gestures and desktop mouse events support
 - 🎁 Powerful context usage, which gives you a lot of freedom
 - 🔧 Highly customizable
-- 👑 Animations and many options
+- 👑 Animations and Utils to create own tools
+- 🔮 Advanced hooks and components
 
-## Install
+## Help me keep working on this project ❤️
+
+- [Become a Sponsor on GitHub](https://github.com/sponsors/prc5)
+
+---
+
+## Installation
 
 ```bash
 npm install --save @takajourei/react-zoom-pan-pinch
@@ -37,24 +44,22 @@ or
 yarn add @takajourei/react-zoom-pan-pinch
 ```
 
-## Usage
+## Examples
 
 ```jsx
 import React, { Component } from "react";
 
 import { TransformWrapper, TransformComponent } from "@takajourei/react-zoom-pan-pinch";
 
-class Example extends Component {
-  render() {
-    return (
-      <TransformWrapper>
-        <TransformComponent>
-          <img src="image.jpg" alt="test" />
-        </TransformComponent>
-      </TransformWrapper>
-    );
-  }
-}
+const Example = () => {
+  return (
+    <TransformWrapper>
+      <TransformComponent>
+        <img src="image.jpg" alt="test" />
+      </TransformComponent>
+    </TransformWrapper>
+  );
+};
 ```
 
 or
@@ -64,31 +69,78 @@ import React, { Component } from "react";
 
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
-class Example extends Component {
-  render() {
-    return (
-      <TransformWrapper
-        initialScale={1}
-        initialPositionX={200}
-        initialPositionY={100}
-      >
-        {({ zoomIn, zoomOut, resetTransform, ...rest }) => (
-          <React.Fragment>
-            <div className="tools">
-              <button onClick={() => zoomIn()}>+</button>
-              <button onClick={() => zoomOut()}>-</button>
-              <button onClick={() => resetTransform()}>x</button>
-            </div>
-            <TransformComponent>
-              <img src="image.jpg" alt="test" />
-              <div>Example text</div>
-            </TransformComponent>
-          </React.Fragment>
-        )}
-      </TransformWrapper>
-    );
-  }
-}
+const Example = () => {
+  return (
+    <TransformWrapper
+      initialScale={1}
+      initialPositionX={200}
+      initialPositionY={100}
+    >
+      {({ zoomIn, zoomOut, resetTransform, ...rest }) => (
+        <React.Fragment>
+          <div className="tools">
+            <button onClick={() => zoomIn()}>+</button>
+            <button onClick={() => zoomOut()}>-</button>
+            <button onClick={() => resetTransform()}>x</button>
+          </div>
+          <TransformComponent>
+            <img src="image.jpg" alt="test" />
+            <div>Example text</div>
+          </TransformComponent>
+        </React.Fragment>
+      )}
+    </TransformWrapper>
+  );
+};
+```
+
+or
+
+```tsx
+import React, { useRef } from "react";
+import {
+  TransformWrapper,
+  TransformComponent,
+  ReactZoomPanPinchRef,
+} from "react-zoom-pan-pinch";
+
+const Controls = ({ zoomIn, zoomOut, resetTransform }) => (
+  <>
+    <button onClick={() => zoomIn()}>+</button>
+    <button onClick={() => zoomOut()}>-</button>
+    <button onClick={() => resetTransform()}>x</button>
+  </>
+);
+
+const Component = () => {
+  const transformComponentRef = useRef<ReactZoomPanPinchRef | null>(null);
+
+  const zoomToImage = () => {
+    if (transformComponentRef.current) {
+      const { zoomToElement } = transformComponentRef.current;
+      zoomToElement("imgExample");
+    }
+  };
+
+  return (
+    <TransformWrapper
+      initialScale={1}
+      initialPositionX={200}
+      initialPositionY={100}
+      ref={transformComponentRef}
+    >
+      {(utils) => (
+        <React.Fragment>
+          <Controls {...utils} />
+          <TransformComponent>
+            <img src="image.jpg" alt="test" id="imgExample" />
+            <div onClick={zoomToImage}>Example text</div>
+          </TransformComponent>
+        </React.Fragment>
+      )}
+    </TransformWrapper>
+  );
+};
 ```
 
 ## License
